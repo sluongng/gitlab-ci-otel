@@ -109,8 +109,7 @@ func (d *daemon) processProject(ctx context.Context, projectID string) {
 		pageOpt.Page = resp.NextPage
 
 		// store all build IDs each run into cache
-		err := cache.writeCache(cachedPipelineIDs)
-		if err != nil {
+		if err := cache.writeCache(cachedPipelineIDs); err != nil {
 			log.Fatalf("error writing cache: %v", err)
 		}
 	}
