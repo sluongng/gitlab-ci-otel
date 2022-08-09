@@ -18,7 +18,7 @@ var (
 
 	GitlabAPIToken   = os.Getenv("GITLAB_TOKEN")
 	GitlabProjectIDs = os.Getenv("GITLAB_PROJECT_IDS")
-	GitlabRateLimit  = 1
+	GitlabRateLimit  = 2
 
 	HoneycombEndPoint = "api.honeycomb.io:443"
 	HoneycombHeaders  = map[string]string{
