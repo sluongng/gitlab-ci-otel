@@ -18,7 +18,7 @@ var (
 
 	GitlabAPIToken   = os.Getenv("GITLAB_TOKEN")
 	GitlabProjectIDs = os.Getenv("GITLAB_PROJECT_IDS")
-	GitlabRateLimit  = 5
+	GitlabRateLimit  = 1
 
 	HoneycombEndPoint = "api.honeycomb.io:443"
 	HoneycombHeaders  = map[string]string{
@@ -34,7 +34,7 @@ type CustomRateLimiter struct {
 
 func NewCustomRateLimiter(limit int) *CustomRateLimiter {
 	return &CustomRateLimiter{
-		ratelimit.New(limit),
+		ratelimit.New(limit, ratelimit.WithoutSlack),
 	}
 }
 
@@ -59,5 +59,5 @@ func main() {
 
 	projectIDs := strings.Split(GitlabProjectIDs, ",")
 
-	NewDaemon(tracer, gl, projectIDs, sleepDuration, ServiceCachePath).Exec(ctx)
+	NewDaemon(tracer, gl, GitlabRateLimit, projectIDs, sleepDuration, ServiceCachePath).Exec(ctx)
 }

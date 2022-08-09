@@ -17,6 +17,7 @@ func (d *daemon) processPipeline(ctx context.Context, projectID string, pipeline
 	p, _, err := d.gl.Pipelines.GetPipeline(projectID, pipelineID)
 	if err != nil {
 		log.Printf("Error getting project %s pipeline %d: %v", projectID, pipelineID, err)
+		return
 	}
 
 	if p.StartedAt == nil || p.FinishedAt == nil {
@@ -27,6 +28,8 @@ func (d *daemon) processPipeline(ctx context.Context, projectID string, pipeline
 
 	// create build span
 	buildCtx, buildSpan := d.tracer.Start(ctx, fmt.Sprintf("Pipeline %d", p.ID), trace.WithTimestamp(*p.StartedAt))
+
+	buildSpan.SetAttributes(attribute.String("kind", "pipeline"))
 
 	// build timing
 	// reference: https://buildkite.com/docs/apis/rest-api/builds#timestamp-attributes

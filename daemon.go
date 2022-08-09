@@ -8,6 +8,7 @@ import (
 
 	"github.com/xanzy/go-gitlab"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/ratelimit"
 )
 
 // daemon contains all the info needed by the goroutines inside the long-lived process
@@ -15,6 +16,7 @@ type daemon struct {
 	lastFinishedAt time.Time
 	tracer         trace.Tracer
 	gl             *gitlab.Client
+	rl             ratelimit.Limiter
 	projectIDs     []string
 	wg             *sync.WaitGroup
 	cacheFilePath  string
@@ -25,6 +27,7 @@ type daemon struct {
 func NewDaemon(
 	tracer trace.Tracer,
 	gl *gitlab.Client,
+	limitRPS int,
 	projectIDs []string,
 	sleepDuration time.Duration,
 	cacheFilePath string,
@@ -39,6 +42,7 @@ func NewDaemon(
 		lastFinishedAt: lastFinishedAt,
 		tracer:         tracer,
 		gl:             gl,
+		rl:             ratelimit.New(limitRPS),
 		projectIDs:     projectIDs,
 		wg:             wg,
 		sleepDuration:  sleepDuration,
@@ -91,6 +95,7 @@ func (d *daemon) processProject(ctx context.Context, projectID string) {
 				log.Println("Skipping cached pipeline:", p.ID)
 				continue
 			}
+
 			d.wg.Add(1)
 			go d.processPipeline(ctx, projectID, p.ID)
 
@@ -102,12 +107,12 @@ func (d *daemon) processProject(ctx context.Context, projectID string) {
 		}
 
 		pageOpt.Page = resp.NextPage
-	}
 
-	// store all build IDs each run into cache
-	err := cache.writeCache(cachedPipelineIDs)
-	if err != nil {
-		log.Fatalf("error writing cache: %v", err)
+		// store all build IDs each run into cache
+		err := cache.writeCache(cachedPipelineIDs)
+		if err != nil {
+			log.Fatalf("error writing cache: %v", err)
+		}
 	}
 
 	d.wg.Done()

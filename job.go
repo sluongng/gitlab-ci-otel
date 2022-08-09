@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/xanzy/go-gitlab"
 	"go.opentelemetry.io/otel/attribute"
@@ -15,7 +14,9 @@ func (d *daemon) processJob(ctx context.Context, projectID string, pipelineID in
 		return
 	}
 
-	_, jSpan := d.tracer.Start(ctx, fmt.Sprintf("Job %d", j.ID), trace.WithTimestamp(*j.StartedAt))
+	_, jSpan := d.tracer.Start(ctx, j.Name, trace.WithTimestamp(*j.StartedAt))
+
+	buildSpan.SetAttributes(attribute.String("kind", "job"))
 
 	jSpan.SetAttributes(attribute.Float64("duration_s", j.Duration))
 	jSpan.SetAttributes(attribute.Float64("queued_duration_s", j.QueuedDuration))
